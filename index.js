@@ -5,21 +5,22 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const API_URL = "https://abrahamdw882-ai-to-hindi.hf.space/translate";
 
-async function translateLines(lines) {
-  const batchSize = 50;
+async function translateSRTBatched(lines, batchSize = 250) {
   const batches = [];
+  const indices = [];
+
   for (let i = 0; i < lines.length; i += batchSize) {
     batches.push(lines.slice(i, i + batchSize));
+    indices.push(i);
   }
 
   const results = await Promise.all(
     batches.map(async (batch) => {
       try {
         const resp = await axios.post(API_URL, { text: batch.join("\n") });
-        const translatedText = resp.data?.translation || "";
-        return translatedText.split("\n");
+        return resp.data?.translation.split("\n") || batch;
       } catch (err) {
-        console.error("Translation error:", err.message);
+        console.error("Batch translation error:", err.message);
         return batch;
       }
     })
@@ -28,7 +29,7 @@ async function translateLines(lines) {
   return results.flat();
 }
 
-async function translateSRT(content) {
+async function translateSRTContent(content) {
   const lines = content.split("\n");
   const textLines = [];
   const textIndices = [];
@@ -40,7 +41,7 @@ async function translateSRT(content) {
     }
   });
 
-  const translations = await translateLines(textLines);
+  const translations = await translateSRTBatched(textLines);
 
   textIndices.forEach((idx, i) => {
     lines[idx] = translations[i] || lines[idx];
@@ -55,7 +56,7 @@ app.get("/translate", async (req, res) => {
 
   try {
     const response = await axios.get(srtUrl);
-    const translated = await translateSRT(response.data);
+    const translated = await translateSRTContent(response.data);
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(translated);
   } catch (err) {
