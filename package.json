@@ -1,16 +1,15 @@
 {
   "name": "srt-translator",
   "version": "1.0.0",
+  "description": "Express API to translate SRT files from English to Hindi using Hugging Face API via URL",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "express": "^4.18.2",
-    "multer": "^1.4.5"
+    "express": "^4.18.2"
   },
-  "engines": {
-    "node": "20.x"
-  }
+  "author": "Abraham",
+  "license": "MIT"
 }
