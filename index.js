@@ -5,13 +5,14 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const API_URL = "https://abrahamdw882-ai-to-hindi.hf.space/translate";
 
-async function translateLine(text) {
+async function translateLines(lines) {
   try {
-    const resp = await axios.get(API_URL, { params: { q: text } });
-    return resp.data.translation || text;
+    const resp = await axios.post(API_URL, { text: lines.join("\n") });
+    const translatedText = resp.data?.translation || "";
+    return translatedText.split("\n");
   } catch (err) {
     console.error("Translation error:", err.message);
-    return text;
+    return lines;
   }
 }
 
@@ -27,9 +28,10 @@ async function translateSRT(content) {
     }
   });
 
-  const translations = await Promise.all(textLines.map(translateLine));
+  const translations = await translateLines(textLines);
+
   textIndices.forEach((idx, i) => {
-    lines[idx] = translations[i];
+    lines[idx] = translations[i] || lines[idx];
   });
 
   return lines.join("\n");
@@ -45,7 +47,7 @@ app.get("/translate", async (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(translated);
   } catch (err) {
-    console.error(err);
+    console.error(err.message);
     res.status(500).send("Failed to fetch or translate SRT");
   }
 });
