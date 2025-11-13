@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const translate = require("@vitalets/google-translate-api");
+const { default: translate } = require("@vitalets/google-translate-api");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
