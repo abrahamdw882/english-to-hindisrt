@@ -6,14 +6,22 @@ const PORT = process.env.PORT || 8080;
 const API_URL = "https://abrahamdw882-ai-to-hindi.hf.space/translate";
 
 async function translateLines(lines) {
-  try {
-    const resp = await axios.post(API_URL, { text: lines.join("\n") });
-    const translatedText = resp.data?.translation || "";
-    return translatedText.split("\n");
-  } catch (err) {
-    console.error("Translation error:", err.message);
-    return lines;
+  const batchSize = 30;
+  const result = [];
+
+  for (let i = 0; i < lines.length; i += batchSize) {
+    const batch = lines.slice(i, i + batchSize);
+    try {
+      const resp = await axios.post(API_URL, { text: batch.join("\n") });
+      const translatedText = resp.data?.translation || "";
+      result.push(...translatedText.split("\n"));
+    } catch (err) {
+      console.error("Translation error:", err.message);
+      result.push(...batch);
+    }
   }
+
+  return result;
 }
 
 async function translateSRT(content) {
