@@ -1,26 +1,25 @@
 const express = require("express");
 const axios = require("axios");
+const translate = require("@vitalets/google-translate-api");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const API_URL = "https://abrahamdw882-ai-to-hindi.hf.space/translate";
 
-async function translateSRTBatched(lines, batchSize = 250) {
+async function translateLines(lines, batchSize = 50) {
   const batches = [];
-  const indices = [];
-
   for (let i = 0; i < lines.length; i += batchSize) {
     batches.push(lines.slice(i, i + batchSize));
-    indices.push(i);
   }
 
   const results = await Promise.all(
     batches.map(async (batch) => {
       try {
-        const resp = await axios.post(API_URL, { text: batch.join("\n") });
-        return resp.data?.translation.split("\n") || batch;
+        const translated = await Promise.all(
+          batch.map((line) => translate(line, { from: "en", to: "hi" }).then(res => res.text))
+        );
+        return translated;
       } catch (err) {
-        console.error("Batch translation error:", err.message);
+        console.error("Translation error:", err.message);
         return batch;
       }
     })
@@ -29,7 +28,7 @@ async function translateSRTBatched(lines, batchSize = 250) {
   return results.flat();
 }
 
-async function translateSRTContent(content) {
+async function translateSRT(content) {
   const lines = content.split("\n");
   const textLines = [];
   const textIndices = [];
@@ -41,7 +40,7 @@ async function translateSRTContent(content) {
     }
   });
 
-  const translations = await translateSRTBatched(textLines);
+  const translations = await translateLines(textLines);
 
   textIndices.forEach((idx, i) => {
     lines[idx] = translations[i] || lines[idx];
@@ -56,7 +55,7 @@ app.get("/translate", async (req, res) => {
 
   try {
     const response = await axios.get(srtUrl);
-    const translated = await translateSRTContent(response.data);
+    const translated = await translateSRT(response.data);
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(translated);
   } catch (err) {
