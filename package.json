@@ -1,14 +1,15 @@
 {
   "name": "srt-translator",
   "version": "1.0.0",
-  "description": "Express API to translate SRT files from English to Hindi using Hugging Face API via URL",
+  "description": "Express API to translate SRT files from English to Hindi using Google Translate API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "@vitalets/google-translate-api": "^8.0.1"
   },
   "author": "Abraham",
   "license": "MIT"
