@@ -13,15 +13,17 @@ async function translateLines(lines, batchSize = 50) {
 
   const results = await Promise.all(
     batches.map(async (batch) => {
-      try {
-        const translated = await Promise.all(
-          batch.map((line) => translate(line, { from: "en", to: "hi" }).then(res => res.text))
-        );
-        return translated;
-      } catch (err) {
-        console.error("Translation error:", err.message);
-        return batch;
-      }
+      const translated = await Promise.all(
+        batch.map(async (line) => {
+          try {
+            const res = await translate(line, { from: "en", to: "hi" });
+            return res.text;
+          } catch {
+            return line;
+          }
+        })
+      );
+      return translated;
     })
   );
 
@@ -34,7 +36,11 @@ async function translateSRT(content) {
   const textIndices = [];
 
   lines.forEach((line, idx) => {
-    if (!/^\d+$/.test(line) && !/^\d{2}:\d{2}:\d{2},\d{3}/.test(line) && line.trim() !== "") {
+    if (
+      !/^\d+$/.test(line) &&
+      !/^\d{2}:\d{2}:\d{2},\d{3}/.test(line) &&
+      line.trim() !== ""
+    ) {
       textLines.push(line.trim());
       textIndices.push(idx);
     }
@@ -59,13 +65,15 @@ app.get("/translate", async (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(translated);
   } catch (err) {
-    console.error(err.message);
+    console.error("Error fetching or translating SRT:", err.message);
     res.status(500).send("Failed to fetch or translate SRT");
   }
 });
 
 app.get("/", (req, res) => {
-  res.send("SRT Translator API is live. Use GET /translate?url=<SRT-URL>");
+  res.send(
+    "SRT Translator API is live. Use GET /translate?url=<SRT-URL>"
+  );
 });
 
 app.listen(PORT, () => {
