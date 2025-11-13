@@ -1,10 +1,7 @@
 const express = require("express");
-const fs = require("fs");
 const axios = require("axios");
-const multer = require("multer");
 
 const app = express();
-const upload = multer({ dest: "/tmp/" });
 const PORT = process.env.PORT || 8080;
 const API_URL = "https://abrahamdw882-ai-to-hindi.hf.space/translate";
 async function translateLine(text) {
@@ -31,28 +28,13 @@ async function translateSRT(content) {
 
   return translatedLines.join("\n");
 }
-app.post("/translate", upload.single("srt"), async (req, res) => {
-  if (!req.file) return res.status(400).send("No SRT file uploaded");
-
-  try {
-    const content = fs.readFileSync(req.file.path, "utf-8");
-    const translated = await translateSRT(content);
-    fs.unlinkSync(req.file.path);
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.send(translated);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Translation failed");
-  }
-});
 app.get("/translate", async (req, res) => {
   const srtUrl = req.query.url;
   if (!srtUrl) return res.status(400).send("Query parameter 'url' is required");
 
   try {
     const response = await axios.get(srtUrl);
-    const srtContent = response.data;
-    const translated = await translateSRT(srtContent);
+    const translated = await translateSRT(response.data);
 
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.send(translated);
@@ -62,11 +44,8 @@ app.get("/translate", async (req, res) => {
   }
 });
 app.get("/", (req, res) => {
-  res.send(
-    "SRT Translator API is live. POST /translate with file, or GET /translate?url=<SRT-URL>"
-  );
+  res.send("SRT Translator API is live. GET /translate?url=<SRT-URL>");
 });
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
